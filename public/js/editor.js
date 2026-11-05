@@ -64,6 +64,7 @@ export async function initAdmin() {
         <div class="sheet-head"><div><div class="sheet-title" id="pr-title">Bàn</div></div>
           <button class="icon-btn" id="pr-close">✕</button></div>
         <div class="field"><label>Số bàn</label><input id="pr-label" maxlength="4" inputmode="numeric" placeholder="1"></div>
+        <div class="field"><label>Tên bàn (người đãi / nhóm khách)</label><input id="pr-name" maxlength="30" placeholder="VD: Bạn Quân · Nhà trai…"></div>
         <div class="slider-row"><label>Số ghế mỗi bàn</label>
           <button class="btn sm" id="pr-total-minus">−</button>
           <output id="pr-total">10</output>
@@ -273,6 +274,12 @@ function showEditUI() {
       t.label = $('pr-label').value.trim() || t.label;
       markDirty(); engine.requestRender();
     });
+    $('pr-name').addEventListener('change', () => {
+      const t = L.tables.find(x => x.id === selectedId); if (!t) return;
+      pushUndo();
+      t.name = $('pr-name').value.trim();
+      markDirty(); engine.requestRender();
+    });
     $('pr-total-minus').onclick = () => adjustSelected('total', -1);
     $('pr-total-plus').onclick = () => adjustSelected('total', +1);
     $('pr-size-minus').onclick = () => adjustSelected('r', -0.12);
@@ -355,6 +362,7 @@ function adjustSelected(field, d) {
 function openProps(t) {
   $('pr-title').textContent = `Bàn ${t.label}`;
   $('pr-label').value = t.label;
+  $('pr-name').value = t.name || '';
   $('pr-total').textContent = t.total;
   openSheet($('ed-props'), $('ed-props-bd'));
   engine.requestRender();
@@ -565,7 +573,7 @@ function drawEditor(ctx, view) {
       if (rpx >= 44) {
         ctx.font = `600 ${t.r * 0.2}px ${FONT}`;
         ctx.fillStyle = 'rgba(207,224,255,0.5)';
-        ctx.fillText('ghế', t.x, t.y + t.r * 0.52);
+        ctx.fillText(t.name || 'ghế', t.x, t.y + t.r * 0.52);
       }
     } else {
       // bàn thường: số bàn ở giữa; số ghế luôn hiện ngay dưới số bàn kể cả
@@ -576,7 +584,7 @@ function drawEditor(ctx, view) {
         ctx.fillText(t.label, t.x, t.y + t.r * 0.05);
         ctx.font = `600 ${t.r * 0.26}px ${FONT}`;
         ctx.fillStyle = 'rgba(207,224,255,0.6)';
-        ctx.fillText(`${t.total} ghế`, t.x, t.y + t.r * 0.52);
+        ctx.fillText(t.name || `${t.total} ghế`, t.x, t.y + t.r * 0.52);
       } else {
         ctx.font = `800 ${t.r * 0.72}px ${FONT}`;
         ctx.fillText(t.label, t.x, t.y - t.r * 0.3);

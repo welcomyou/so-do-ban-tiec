@@ -16,6 +16,7 @@ let nick = localStorage.getItem('nick') || '';
 let lastSummaryText = '';
 
 const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
 export function initViewer() {
   const canvas = $('cv');
@@ -280,7 +281,7 @@ function closeUpdateSheet() {
 function renderUpdateSheet() {
   const t = selected; if (!t) return;
   $('upd-title').textContent = `Bàn ${t.label}`;
-  $('upd-sub').textContent = `${t.total} chỗ · còn trống:`;
+  $('upd-sub').textContent = (t.name ? t.name + ' · ' : '') + `${t.total} chỗ · còn trống:`;
   const numEl = $('upd-number');
   numEl.textContent = t.empty;
   numEl.className = 'upd-number ' + classOf(t);
@@ -373,10 +374,11 @@ function buildList(filter = 'all') {
     const row = document.createElement('div');
     row.className = 'table-row';
     const cls = classOf(t);
+    const sub = (t.name ? esc(t.name) + ' · ' : '') + `${t.empty}/${t.total} trống`;
     row.innerHTML = `
       <span class="dot ${cls === 'green' ? 'g' : cls === 'amber' ? 'a' : 'r'}"></span>
-      <span class="t-label">Bàn ${t.label}</span>
-      <span class="t-sub">${t.empty}/${t.total} trống</span>
+      <span class="t-label">Bàn ${esc(String(t.label))}</span>
+      <span class="t-sub">${sub}</span>
       <span class="t-empty" style="color:var(--${cls === 'green' ? 'green' : cls === 'amber' ? 'amber' : 'red'})">${t.empty}</span>`;
     row.onclick = () => {
       closeSheet($('sheet-list'), $('sheet-list-backdrop'));

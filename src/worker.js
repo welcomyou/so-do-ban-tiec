@@ -101,11 +101,16 @@ function sanitizeTables(raw) {
     if (!t || typeof t !== 'object') return null;
     const id = String(t.id || '').slice(0, 40);
     const label = String(t.label ?? '').slice(0, 8).trim();
+    const name = String(t.name ?? '').slice(0, 30).trim(); // tên bàn: người đãi / nhóm khách
     const total = Math.max(0, Math.min(30, Number(t.total) || 0));
     const x = Number(t.x), y = Number(t.y), r = Number(t.r);
     if (!id || !label || !Number.isFinite(x) || !Number.isFinite(y) || !(r > 0) || seen.has(id)) return null;
     seen.add(id);
-    out.push({ id, label, total: Math.round(total), x: Math.round(x * 10) / 10, y: Math.round(y * 10) / 10, r: Math.round(r * 10) / 10 });
+    out.push({
+      id, label, total: Math.round(total),
+      x: Math.round(x * 10) / 10, y: Math.round(y * 10) / 10, r: Math.round(r * 10) / 10,
+      ...(name ? { name } : {}),
+    });
   }
   return out;
 }
@@ -322,7 +327,7 @@ async function buildState(db, layout, withFeed = true) {
   const tables = JSON.parse(layout.tables_json || '[]').map(t => {
     const s = stateMap.get(t.id);
     return {
-      id: t.id, label: t.label, total: t.total, x: t.x, y: t.y, r: t.r,
+      id: t.id, label: t.label, name: t.name || null, total: t.total, x: t.x, y: t.y, r: t.r,
       empty: s ? s.empty : t.total,
       updatedBy: s?.updated_by || null,
       updatedAt: s?.updated_at || null,
