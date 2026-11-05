@@ -150,7 +150,6 @@ function applyState(st) {
   loadBg(st.bgUrl);
   if (firstLoad) fitView();
   updateSummary();
-  updateTicker();
   if (isSheetOpen($('sheet-update')) && selected) {
     const fresh = scene.tables.find(t => t.id === selected.id);
     if (fresh) { selected = fresh; renderUpdateSheet(); }
@@ -248,12 +247,7 @@ function draw(ctx, view, now) {
     ctx.strokeStyle = p.ring;
     ctx.stroke();
 
-    if (rpx < 15) {
-      // quá nhỏ: chỉ chấm màu
-      continue;
-    }
-
-    // số ghế trống — to, giữa bàn
+    // số ghế trống — luôn vẽ dù bàn rất nhỏ (tỉ lệ so với vòng bàn không đổi theo zoom)
     const bigFont = t.r * (rpx < 44 ? 0.98 : 0.68);
     ctx.font = `800 ${bigFont}px -apple-system, 'Segoe UI', Roboto, sans-serif`;
     ctx.textAlign = 'center';
@@ -356,30 +350,16 @@ function updateSummary() {
 }
 
 function uiSecondTick() {
-  // trạng thái kết nối + ticker
+  // trạng thái kết nối
   const stale = lastOk === 0 || Date.now() - lastOk > 9000;
   $('offline-banner').hidden = !(scene.active && stale);
   if (stale && lastOk) setLiveDot('stale');
-  updateTicker();
 }
 
 function setLiveDot(mode) {
   const d = $('live-dot');
   d.classList.toggle('off', mode === 'off');
   d.classList.toggle('stale', mode === 'stale');
-}
-
-function updateTicker() {
-  let el = document.querySelector('.ticker');
-  const f = scene.feed?.[0];
-  if (!scene.active || !f || Date.now() - f.at > 15 * 60000) { if (el) el.remove(); return; }
-  if (!el) {
-    el = document.createElement('div');
-    el.className = 'ticker';
-    el.onclick = () => { buildList(); openSheet($('sheet-list'), $('sheet-list-backdrop')); };
-    document.querySelector('#canvas-wrap').appendChild(el);
-  }
-  el.innerHTML = `<b>${f.by_name || 'AI đó'}</b> · Bàn ${f.label} → ${f.empty} trống · ${timeAgo(f.at)}`;
 }
 
 // ---------- danh sách bàn ----------

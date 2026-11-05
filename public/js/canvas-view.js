@@ -67,23 +67,39 @@ export class PanZoomCanvas {
     c.addEventListener('pointermove', (e) => this._move(e));
     c.addEventListener('pointerup', (e) => this._up(e));
     c.addEventListener('pointercancel', (e) => this._up(e, true));
+    // chặn click tổng hợp sinh ra sau cú chạm trên canvas — nó bắn trúng
+    // backdrop của sheet vừa mở và đóng sheet ngay trên điện thoại
+    c.addEventListener('touchend', (e) => e.preventDefault(), { passive: false });
     c.addEventListener('wheel', (e) => this._wheel(e), { passive: false });
     c.addEventListener('contextmenu', (e) => e.preventDefault());
   }
 
+  // clientX/Y là tọa độ so với viewport; mọi tính toán pan/zoom/hit-test dùng
+  // tọa độ so với canvas (tx/ty, w/h) — nên phải trừ gốc canvas trước, nếu không
+  // canvas nằm dưới thanh công cụ sẽ chọn/kéo nhầm bàn (vùng chạm bị lệch).
+  _local(e) {
+    const r = this.canvas.getBoundingClientRect();
+    return { x: e.clientX - r.left, y: e.clientY - r.top };
+  }
+
   _down(e) {
     this.canvas.setPointerCapture(e.pointerId);
-    this.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    const p = this._local(e);
+    this.pointers.set(e.pointerId, p);
     this._cancelAnim();
     if (this.pointers.size === 1) {
-      this._start = { x: e.clientX, y: e.clientY, t: performance.now() };
+      this._start = { x: p.x, y: p.y, t: performance.now() };
       this.dragMoved = false;
       if (this.opts.allowObjectDrag && this.opts.hitTest) {
-        const w = this.screenToWorld(e.clientX, e.clientY);
+        const w = this.screenToWorld(p.x, p.y);
         const obj = this.opts.hitTest(w.x, w.y);
         if (obj) {
           this.draggingObj = obj;
-          this.opts.onDragObject?.(obj, w.x, w.y, 'start');
+          // giữ nguyên độ lệch giữa điểm nắm và tâm bàn để bàn không nhảy
+          // tới tâm ngón tay ngay lúc chạm xuống
+          this._dragOff = (Number.isFinite(obj.x) && Number.isFinite(obj.y))
+            ? { x: obj.x - w.x, y: obj.y - w.y } : { x: 0, y: 0 };
+          this.opts.onDragObject?.(obj, w.x + this._dragOff.x, w.y + this._dragOff.y, 'start');
         }
       }
     } else if (this.pointers.size === 2) {
@@ -95,7 +111,8 @@ export class PanZoomCanvas {
   _move(e) {
     if (!this.pointers.has(e.pointerId)) return;
     const prev = this.pointers.get(e.pointerId);
-    this.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    const cur = this._local(e);
+    this.pointers.set(e.pointerId, cur);
 
     if (this.pointers.size >= 2) {
       const info = this._pinchInfo();
@@ -114,12 +131,12 @@ export class PanZoomCanvas {
       return;
     }
 
-    const dx = e.clientX - prev.x, dy = e.clientY - prev.y;
-    if (Math.hypot(e.clientX - this._start.x, e.clientY - this._start.y) > TAP_MOVE_PX) this.dragMoved = true;
+    const dx = cur.x - prev.x, dy = cur.y - prev.y;
+    if (Math.hypot(cur.x - this._start.x, cur.y - this._start.y) > TAP_MOVE_PX) this.dragMoved = true;
 
     if (this.draggingObj) {
-      const w = this.screenToWorld(e.clientX, e.clientY);
-      this.opts.onDragObject?.(this.draggingObj, w.x, w.y, 'move');
+      const w = this.screenToWorld(cur.x, cur.y);
+      this.opts.onDragObject?.(this.draggingObj, w.x + this._dragOff.x, w.y + this._dragOff.y, 'move');
       this.dirty = true;
     } else {
       this.tx += dx; this.ty += dy;
@@ -129,6 +146,7 @@ export class PanZoomCanvas {
   }
 
   _up(e, cancelled = false) {
+    const cur = this._local(e);
     const had = this.pointers.delete(e.pointerId);
     if (this.pointers.size === 1) {
       // rơi từ 2 ngón về 1: reset gốc pan để tránh nhảy
@@ -140,23 +158,35 @@ export class PanZoomCanvas {
     if (!had) return;
 
     if (this.draggingObj) {
-      const w = this.screenToWorld(e.clientX, e.clientY);
-      this.opts.onDragObject?.(this.draggingObj, w.x, w.y, 'end');
+      const obj = this.draggingObj;
+      const w = this.screenToWorld(cur.x, cur.y);
+      this.opts.onDragObject?.(obj, w.x + this._dragOff.x, w.y + this._dragOff.y, 'end');
       this.draggingObj = null;
+      // chạm ngắn không kéo = tap vào bàn (mở bảng thuộc tính như tap nền),
+      // trước đây nhánh này bị nuốt nên "chạm bàn để sửa" không bao giờ chạy
+      const dt = performance.now() - this._start.t;
+      if (!cancelled && !this.dragMoved && dt < TAP_MS) {
+        const now = performance.now();
+        const isDouble = now - this.lastTap.t < 320 &&
+          Math.hypot(cur.x - this.lastTap.x, cur.y - this.lastTap.y) < 36;
+        this.lastTap = { t: now, x: cur.x, y: cur.y };
+        if (isDouble) this.opts.onDoubleTap?.(obj, w);
+        else this.opts.onTap?.(obj, w);
+      }
       return;
     }
 
     if (cancelled) return;
     const dt = performance.now() - this._start.t;
-    const dist = Math.hypot(e.clientX - this._start.x, e.clientY - this._start.y);
+    const dist = Math.hypot(cur.x - this._start.x, cur.y - this._start.y);
     if (dt < TAP_MS && dist < TAP_MOVE_PX) {
-      const w = this.screenToWorld(e.clientX, e.clientY);
+      const w = this.screenToWorld(cur.x, cur.y);
       const obj = this.opts.hitTest?.(w.x, w.y) || null;
       // double-tap?
       const now = performance.now();
       const isDouble = now - this.lastTap.t < 320 &&
-        Math.hypot(e.clientX - this.lastTap.x, e.clientY - this.lastTap.y) < 36;
-      this.lastTap = { t: now, x: e.clientX, y: e.clientY };
+        Math.hypot(cur.x - this.lastTap.x, cur.y - this.lastTap.y) < 36;
+      this.lastTap = { t: now, x: cur.x, y: cur.y };
       if (isDouble) this.opts.onDoubleTap?.(obj, w);
       else this.opts.onTap?.(obj, w);
     }
@@ -165,8 +195,9 @@ export class PanZoomCanvas {
   _wheel(e) {
     e.preventDefault();
     this._cancelAnim();
+    const p = this._local(e);
     const factor = Math.pow(1.0018, -e.deltaY);
-    this.zoomAt(e.clientX, e.clientY, factor);
+    this.zoomAt(p.x, p.y, factor);
   }
 
   _pinchInfo() {

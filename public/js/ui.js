@@ -1,7 +1,30 @@
 // UI helpers: bottom sheet, modal confirm, prompt
+
+// Cú chạm mở sheet từ canvas còn sinh ra click "ma" ngay sau touchend —
+// click đó hit-test trúng backdrop vừa hiện (hoặc nút trong sheet) và đóng
+// sheet/đổi số chỗ ngay trên mobile. Máy tính dùng chuột thì click nhắm vào
+// canvas nên không bị. Nuốt đúng click trùng toạ độ cú chạm vừa rồi.
+let lastPointerUp = null;
+document.addEventListener('pointerup', (e) => {
+  lastPointerUp = { t: performance.now(), x: e.clientX, y: e.clientY };
+}, true);
+
+function swallowGhostClick() {
+  const origin = lastPointerUp; // chốt toạ độ cú chạm vừa mở sheet
+  const eat = (e) => {
+    if (origin && performance.now() - origin.t < 400 &&
+        Math.hypot(e.clientX - origin.x, e.clientY - origin.y) < 12) {
+      e.stopPropagation();
+    }
+  };
+  document.addEventListener('click', eat, { capture: true, once: true });
+  setTimeout(() => document.removeEventListener('click', eat, true), 400);
+}
+
 export function openSheet(sheetEl, backdropEl) {
   backdropEl.hidden = false;
   sheetEl.hidden = false;
+  swallowGhostClick();
   requestAnimationFrame(() => requestAnimationFrame(() => {
     backdropEl.classList.add('show');
     sheetEl.classList.add('show');

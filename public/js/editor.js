@@ -18,6 +18,7 @@ let undoStack = [];
 let dirty = false;
 let autoSaveTimer = null;
 let editingId = null;
+let dragRef = null; // trạng thái kéo bàn hiện tại: { ox, oy, pushed }
 
 // L = layout đang sửa
 let L = null;
@@ -255,9 +256,13 @@ function showEditUI() {
       allowObjectDrag: true,
       onDragObject: (obj, wx, wy, phase) => {
         if (mode !== 'edit') return;
-        if (phase === 'start') pushUndo();
+        if (phase === 'start') dragRef = { ox: obj.x, oy: obj.y, pushed: false };
+        else if (dragRef && !dragRef.pushed &&
+                 (Math.round(wx) !== dragRef.ox || Math.round(wy) !== dragRef.oy)) {
+          pushUndo(); dragRef.pushed = true; // chỉ hoàn tác khi bàn thật sự rời chỗ
+        }
         obj.x = Math.round(wx); obj.y = Math.round(wy);
-        if (phase === 'end') markDirty();
+        if (phase === 'end') { if (dragRef?.pushed) markDirty(); dragRef = null; }
       },
     });
     $('ed-props-bd').onclick = () => closeProps();
@@ -529,13 +534,56 @@ function drawEditor(ctx, view) {
     if (rpx < 15) continue;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillStyle = num;
-    ctx.font = `800 ${t.r * (rpx < 44 ? 0.9 : 0.6)}px -apple-system, 'Segoe UI', Roboto, sans-serif`;
-    ctx.fillText(t.label, t.x, t.y + (rpx >= 44 ? t.r * 0.05 : 0));
-    if (rpx >= 44) {
-      ctx.font = `600 ${t.r * 0.26}px -apple-system, 'Segoe UI', Roboto, sans-serif`;
-      ctx.fillStyle = 'rgba(207,224,255,0.6)';
-      ctx.fillText(`${t.total} ghế`, t.x, t.y + t.r * 0.52);
+    const FONT = "-apple-system, 'Segoe UI', Roboto, sans-serif";
+    if (preview) {
+      // xem thử = đúng những gì khách/MC thấy ngay sau xuất bản (mọi bàn đầy
+      // chỗ nên số ghế trống = tổng số ghế) — số chỗ to ở chính giữa vòng
+      if (rpx >= 44) {
+        ctx.font = `700 ${t.r * 0.30}px ${FONT}`;
+        ctx.fillStyle = 'rgba(169,245,201,0.9)';
+        ctx.fillText(`Bàn ${t.label}`, t.x, t.y - t.r * 0.42);
+      }
+      ctx.font = `800 ${t.r * (rpx < 44 ? 0.98 : 0.68)}px ${FONT}`;
+      ctx.fillStyle = num;
+      ctx.fillText(String(t.total), t.x, t.y + (rpx >= 44 ? t.r * 0.12 : 0));
+      if (rpx >= 44) {
+        ctx.font = `600 ${t.r * 0.22}px ${FONT}`;
+        ctx.fillStyle = 'rgba(169,245,201,0.65)';
+        ctx.fillText(t.total === 0 ? 'ĐẦY' : `trống / ${t.total}`, t.x, t.y + t.r * 0.55);
+      }
+    } else if (t.total < 8) {
+      // bàn ít ghế (< 8): số chỗ ngồi là con số chính giữa vòng tròn để nhìn
+      // là biết bàn này còn bao nhiêu chỗ để dắt khách tới
+      if (rpx >= 30) {
+        ctx.font = `700 ${t.r * (rpx >= 44 ? 0.26 : 0.38)}px ${FONT}`;
+        ctx.fillStyle = 'rgba(207,224,255,0.65)';
+        ctx.fillText(rpx >= 44 ? `Bàn ${t.label}` : t.label, t.x, t.y - t.r * (rpx >= 44 ? 0.48 : 0.6));
+      }
+      ctx.font = `800 ${t.r * (rpx >= 44 ? 0.62 : 0.8)}px ${FONT}`;
+      ctx.fillStyle = num;
+      ctx.fillText(String(t.total), t.x, t.y + (rpx >= 44 ? t.r * 0.08 : 0));
+      if (rpx >= 44) {
+        ctx.font = `600 ${t.r * 0.2}px ${FONT}`;
+        ctx.fillStyle = 'rgba(207,224,255,0.5)';
+        ctx.fillText('ghế', t.x, t.y + t.r * 0.52);
+      }
+    } else {
+      // bàn thường: số bàn ở giữa; số ghế luôn hiện ngay dưới số bàn kể cả
+      // khi zoom xa (trước đây chỉ hiện khi vòng tròn vẽ đủ lớn)
+      ctx.fillStyle = num;
+      if (rpx >= 44) {
+        ctx.font = `800 ${t.r * 0.6}px ${FONT}`;
+        ctx.fillText(t.label, t.x, t.y + t.r * 0.05);
+        ctx.font = `600 ${t.r * 0.26}px ${FONT}`;
+        ctx.fillStyle = 'rgba(207,224,255,0.6)';
+        ctx.fillText(`${t.total} ghế`, t.x, t.y + t.r * 0.52);
+      } else {
+        ctx.font = `800 ${t.r * 0.72}px ${FONT}`;
+        ctx.fillText(t.label, t.x, t.y - t.r * 0.3);
+        ctx.font = `700 ${t.r * 0.42}px ${FONT}`;
+        ctx.fillStyle = 'rgba(207,224,255,0.75)';
+        ctx.fillText(String(t.total), t.x, t.y + t.r * 0.45);
+      }
     }
   }
   ctx.restore();

@@ -104,18 +104,6 @@ input, textarea { -webkit-user-select: text; user-select: text; }
 .empty-state h2 { margin: 4px 0 0; font-size: 18px; }
 .empty-state p { margin: 0 0 12px; color: var(--text-dim); font-size: 14px; }
 
-/* ---------- Ticker cập nhật ---------- */
-.ticker {
-  position: absolute; left: 12px; bottom: calc(16px + var(--sab));
-  max-width: 62%; z-index: 15;
-  background: rgba(26,35,56,.92); border: 1px solid var(--line);
-  border-radius: 999px; padding: 8px 14px;
-  font-size: 12.5px; color: var(--text);
-  backdrop-filter: blur(8px);
-  cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.ticker b { color: var(--amber); }
-
 /* ---------- Sheets (bottom) ---------- */
 .sheet-backdrop {
   position: fixed; inset: 0; background: rgba(2,5,12,.6);
