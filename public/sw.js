@@ -4,7 +4,7 @@
 // - HTML/JS/CSS/manifest: network-first (cập nhật code ngay khi có bản mới),
 //   fallback cache khi offline
 // - icon + pdf.js vendor: cache-first (ít đổi, dùng offline)
-const VERSION = 'v1.0.8';
+const VERSION = 'v1.0.9';
 const CACHE = `bandanhcupo-${VERSION}`;
 const PRECACHE = [
   './',

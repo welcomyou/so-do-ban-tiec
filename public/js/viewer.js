@@ -259,9 +259,9 @@ function draw(ctx, view, now) {
     // lại vừa khung bàn để không đè sang tên của bàn kế bên
     const nameText = t.name || `Bàn ${t.label}`;
     const NAME_FONT = `-apple-system, 'Segoe UI', Roboto, sans-serif`;
-    let nameFont = t.r * 0.42;
+    let nameFont = t.r * 0.63;
     ctx.font = `700 ${nameFont}px ${NAME_FONT}`;
-    const maxNameW = t.r * 2.4;
+    const maxNameW = t.r * 3.6;
     const nameW = ctx.measureText(nameText).width;
     if (nameW > maxNameW) {
       nameFont *= maxNameW / nameW;
@@ -270,9 +270,9 @@ function draw(ctx, view, now) {
     ctx.lineJoin = 'round';
     ctx.strokeStyle = 'rgba(2,5,12,0.62)';
     ctx.lineWidth = nameFont * 0.18;
-    ctx.strokeText(nameText, t.x, t.y - t.r * 1.32);
+    ctx.strokeText(nameText, t.x, t.y - t.r * 1.45);
     ctx.fillStyle = p.label;
-    ctx.fillText(nameText, t.x, t.y - t.r * 1.32);
+    ctx.fillText(nameText, t.x, t.y - t.r * 1.45);
   }
   ctx.restore();
 }

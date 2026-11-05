@@ -549,9 +549,9 @@ function drawEditor(ctx, view) {
       // xem thử = đúng những gì khách/MC thấy: tên bàn phía trên vòng
       // (mọi mức zoom) + số ghế trống to ở chính giữa
       const nameText = t.name || `Bàn ${t.label}`;
-      let nameFont = t.r * 0.42;
+      let nameFont = t.r * 0.63;
       ctx.font = `700 ${nameFont}px ${FONT}`;
-      const maxNameW = t.r * 2.4;
+      const maxNameW = t.r * 3.6;
       const nameW = ctx.measureText(nameText).width;
       if (nameW > maxNameW) {
         nameFont *= maxNameW / nameW;
@@ -562,9 +562,9 @@ function drawEditor(ctx, view) {
       ctx.lineJoin = 'round';
       ctx.strokeStyle = 'rgba(2,5,12,0.62)';
       ctx.lineWidth = nameFont * 0.18;
-      ctx.strokeText(nameText, t.x, t.y - t.r * 1.32);
+      ctx.strokeText(nameText, t.x, t.y - t.r * 1.45);
       ctx.fillStyle = 'rgba(169,245,201,0.9)';
-      ctx.fillText(nameText, t.x, t.y - t.r * 1.32);
+      ctx.fillText(nameText, t.x, t.y - t.r * 1.45);
       ctx.font = `800 ${t.r * 0.98}px ${FONT}`;
       ctx.fillStyle = num;
       ctx.fillText(String(t.total), t.x, t.y);
