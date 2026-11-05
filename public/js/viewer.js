@@ -257,10 +257,13 @@ function draw(ctx, view, now) {
     ctx.fillText(String(t.empty), t.x, t.y + (rpx >= 44 ? t.r * 0.12 : 0));
 
     if (rpx >= 44) {
+      // bàn có tên: tên chiếm dòng trên, số bàn dồn xuống dòng phụ cạnh tổng ghế
       ctx.font = `700 ${t.r * 0.30}px -apple-system, 'Segoe UI', Roboto, sans-serif`;
       ctx.fillStyle = p.label;
-      ctx.fillText(`Bàn ${t.label}`, t.x, t.y - t.r * 0.42);
-      const sub = t.empty === 0 ? 'ĐẦY' : `trống / ${t.total}`;
+      ctx.fillText(t.name || `Bàn ${t.label}`, t.x, t.y - t.r * 0.42);
+      const sub = t.name
+        ? `Bàn ${t.label} · ${t.empty === 0 ? 'ĐẦY' : t.total + ' chỗ'}`
+        : (t.empty === 0 ? 'ĐẦY' : `trống / ${t.total}`);
       ctx.font = `600 ${t.r * 0.22}px -apple-system, 'Segoe UI', Roboto, sans-serif`;
       ctx.fillText(sub, t.x, t.y + t.r * 0.55);
     }

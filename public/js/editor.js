@@ -549,7 +549,7 @@ function drawEditor(ctx, view) {
       if (rpx >= 44) {
         ctx.font = `700 ${t.r * 0.30}px ${FONT}`;
         ctx.fillStyle = 'rgba(169,245,201,0.9)';
-        ctx.fillText(`Bàn ${t.label}`, t.x, t.y - t.r * 0.42);
+        ctx.fillText(t.name || `Bàn ${t.label}`, t.x, t.y - t.r * 0.42);
       }
       ctx.font = `800 ${t.r * (rpx < 44 ? 0.98 : 0.68)}px ${FONT}`;
       ctx.fillStyle = num;
@@ -557,7 +557,9 @@ function drawEditor(ctx, view) {
       if (rpx >= 44) {
         ctx.font = `600 ${t.r * 0.22}px ${FONT}`;
         ctx.fillStyle = 'rgba(169,245,201,0.65)';
-        ctx.fillText(t.total === 0 ? 'ĐẦY' : `trống / ${t.total}`, t.x, t.y + t.r * 0.55);
+        ctx.fillText(t.name
+          ? `Bàn ${t.label} · ${t.total === 0 ? 'ĐẦY' : t.total + ' chỗ'}`
+          : (t.total === 0 ? 'ĐẦY' : `trống / ${t.total}`), t.x, t.y + t.r * 0.55);
       }
     } else if (t.total < 8) {
       // bàn ít ghế (< 8): số chỗ ngồi là con số chính giữa vòng tròn để nhìn
