@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <title>Sơ đồ bàn tiệc</title>
+  <meta name="description" content="Theo dõi và cập nhật số ghế trống tại từng bàn tiệc trong thời gian thực">
+  <meta name="theme-color" content="#0b101c">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Bàn tiệc">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./icons/icon-192.png">
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+  <link rel="stylesheet" href="./css/app.css">
+</head>
+<body>
+  <noscript><p style="padding:2rem">Ứng dụng cần JavaScript. Vui lòng bật JavaScript.</p></noscript>
+
+  <!-- ===== Viewer (công khai, không cần đăng nhập) ===== -->
+  <div id="view-viewer" class="screen">
+    <header class="topbar" id="viewer-topbar">
+      <div class="topbar-left">
+        <div class="app-title">Sơ đồ bàn tiệc</div>
+        <div class="summary" id="summary-line">Đang tải…</div>
+      </div>
+      <div class="topbar-right">
+        <span class="live-dot" id="live-dot" title="Kết nối"></span>
+        <button class="icon-btn" id="btn-menu" aria-label="Menu">☰</button>
+      </div>
+    </header>
+
+    <div class="canvas-wrap" id="canvas-wrap">
+      <canvas id="cv"></canvas>
+      <div class="fab-col">
+        <button class="fab" id="btn-fit" title="Về toàn cảnh">⤢</button>
+        <button class="fab" id="btn-list" title="Danh sách bàn">☰ bàn</button>
+      </div>
+      <div class="offline-banner" id="offline-banner" hidden>Mất kết nối — đang hiển thị dữ liệu cũ</div>
+      <div class="empty-state" id="empty-state" hidden>
+        <div class="empty-icon">💒</div>
+        <h2>Chưa có sơ đồ nào được xuất bản</h2>
+        <p>Quản trị viên cần tạo và xuất bản sơ đồ để mọi người thấy.</p>
+        <a class="btn primary" href="#/admin">Vào trang quản trị</a>
+      </div>
+    </div>
+
+    <!-- Sheet: cập nhật nhanh số ghế -->
+    <div class="sheet-backdrop" id="sheet-update-backdrop" hidden></div>
+    <div class="sheet" id="sheet-update" hidden>
+      <div class="sheet-grab"></div>
+      <div class="sheet-head">
+        <div>
+          <div class="sheet-title" id="upd-title">Bàn —</div>
+          <div class="sheet-sub" id="upd-sub">— chỗ</div>
+        </div>
+        <button class="icon-btn" id="upd-close" aria-label="Đóng">✕</button>
+      </div>
+      <div class="upd-display">
+        <button class="upd-btn minus" id="upd-minus" aria-label="Bớt 1 ghế trống">−</button>
+        <div class="upd-number" id="upd-number">–</div>
+        <button class="upd-btn plus" id="upd-plus" aria-label="Thêm 1 ghế trống">＋</button>
+      </div>
+      <div class="upd-caption">SỐ GHẾ TRỐNG — bấm − / ＋ để chỉnh, đổi màu ngay lập tức</div>
+      <div class="quick-set" id="quick-set"></div>
+      <div class="upd-meta" id="upd-meta"></div>
+    </div>
+
+    <!-- Sheet: danh sách bàn -->
+    <div class="sheet-backdrop" id="sheet-list-backdrop" hidden></div>
+    <div class="sheet sheet-tall" id="sheet-list" hidden>
+      <div class="sheet-grab"></div>
+      <div class="sheet-head">
+        <div class="sheet-title">Danh sách bàn</div>
+        <button class="icon-btn" id="list-close" aria-label="Đóng">✕</button>
+      </div>
+      <div class="chip-row" id="list-filter">
+        <button class="chip active" data-f="all">Tất cả</button>
+        <button class="chip" data-f="open">Còn chỗ</button>
+        <button class="chip" data-f="full">Đầy</button>
+      </div>
+      <div class="table-list" id="table-list"></div>
+    </div>
+
+    <!-- Sheet: menu -->
+    <div class="sheet-backdrop" id="sheet-menu-backdrop" hidden></div>
+    <div class="sheet" id="sheet-menu" hidden>
+      <div class="sheet-grab"></div>
+      <div class="sheet-head"><div class="sheet-title">Tuỳ chọn</div>
+        <button class="icon-btn" id="menu-close" aria-label="Đóng">✕</button></div>
+      <div class="menu-list">
+        <label class="menu-row">
+          <span>Tên của bạn <small>(hiện khi bạn cập nhật)</small></span>
+          <input id="inp-nick" maxlength="24" placeholder="VD: Lan, Bảo…">
+        </label>
+        <button class="menu-row toggle" id="btn-wake"><span>Giữ màn hình sáng</span><span class="switch" id="wake-sw"></span></button>
+        <button class="menu-row" id="btn-install"><span>📱 Cài ứng dụng lên màn hình chính</span></button>
+        <button class="menu-row" id="btn-refresh"><span>🔄 Làm mới ngay</span></button>
+        <a class="menu-row" href="#/admin"><span>🛠 Trang quản trị</span></a>
+      </div>
+      <div class="ios-install" id="ios-install" hidden>
+        <p><b>Trên iPhone/iPad:</b> bấm nút <b>Chia sẻ</b> (⬆️) trong Safari → chọn <b>“Thêm vào Màn hình chính”</b>.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Admin ===== -->
+  <div id="view-admin" class="screen" hidden></div>
+
+  <div id="toasts" aria-live="polite"></div>
+  <script type="module" src="./js/main.js"></script>
+</body>
+</html>
