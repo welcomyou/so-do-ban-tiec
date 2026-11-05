@@ -248,25 +248,31 @@ function draw(ctx, view, now) {
     ctx.strokeStyle = p.ring;
     ctx.stroke();
 
-    // số ghế trống — luôn vẽ dù bàn rất nhỏ (tỉ lệ so với vòng bàn không đổi theo zoom)
-    const bigFont = t.r * (rpx < 44 ? 0.98 : 0.68);
-    ctx.font = `800 ${bigFont}px -apple-system, 'Segoe UI', Roboto, sans-serif`;
+    // số ghế trống — giữa vòng bàn, hiện ở mọi mức zoom
+    ctx.font = `800 ${t.r * 0.98}px -apple-system, 'Segoe UI', Roboto, sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillStyle = p.num;
-    ctx.fillText(String(t.empty), t.x, t.y + (rpx >= 44 ? t.r * 0.12 : 0));
+    ctx.fillText(String(t.empty), t.x, t.y);
 
-    if (rpx >= 44) {
-      // bàn có tên: tên chiếm dòng trên, số bàn dồn xuống dòng phụ cạnh tổng ghế
-      ctx.font = `700 ${t.r * 0.30}px -apple-system, 'Segoe UI', Roboto, sans-serif`;
-      ctx.fillStyle = p.label;
-      ctx.fillText(t.name || `Bàn ${t.label}`, t.x, t.y - t.r * 0.42);
-      const sub = t.name
-        ? `Bàn ${t.label} · ${t.empty === 0 ? 'ĐẦY' : t.total + ' chỗ'}`
-        : (t.empty === 0 ? 'ĐẦY' : `trống / ${t.total}`);
-      ctx.font = `600 ${t.r * 0.22}px -apple-system, 'Segoe UI', Roboto, sans-serif`;
-      ctx.fillText(sub, t.x, t.y + t.r * 0.55);
+    // tên bàn — phía trên vòng bàn, hiện ở mọi mức zoom; tên dài thì thu chữ
+    // lại vừa khung bàn để không đè sang tên của bàn kế bên
+    const nameText = t.name || `Bàn ${t.label}`;
+    const NAME_FONT = `-apple-system, 'Segoe UI', Roboto, sans-serif`;
+    let nameFont = t.r * 0.42;
+    ctx.font = `700 ${nameFont}px ${NAME_FONT}`;
+    const maxNameW = t.r * 2.4;
+    const nameW = ctx.measureText(nameText).width;
+    if (nameW > maxNameW) {
+      nameFont *= maxNameW / nameW;
+      ctx.font = `700 ${nameFont}px ${NAME_FONT}`;
     }
+    ctx.lineJoin = 'round';
+    ctx.strokeStyle = 'rgba(2,5,12,0.62)';
+    ctx.lineWidth = nameFont * 0.18;
+    ctx.strokeText(nameText, t.x, t.y - t.r * 1.32);
+    ctx.fillStyle = p.label;
+    ctx.fillText(nameText, t.x, t.y - t.r * 1.32);
   }
   ctx.restore();
 }

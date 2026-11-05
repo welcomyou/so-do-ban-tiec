@@ -539,28 +539,35 @@ function drawEditor(ctx, view) {
       ctx.stroke();
       ctx.setLineDash([]);
     }
-    if (rpx < 15) continue;
+    // bàn quá nhỏ chỉ bỏ bớt chi tiết khi đang sửa; chế độ xem thử vẽ y như
+    // viewer — tên và số ghế hiện ở mọi mức zoom
+    if (rpx < 15 && !preview) continue;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     const FONT = "-apple-system, 'Segoe UI', Roboto, sans-serif";
     if (preview) {
-      // xem thử = đúng những gì khách/MC thấy ngay sau xuất bản (mọi bàn đầy
-      // chỗ nên số ghế trống = tổng số ghế) — số chỗ to ở chính giữa vòng
-      if (rpx >= 44) {
-        ctx.font = `700 ${t.r * 0.30}px ${FONT}`;
-        ctx.fillStyle = 'rgba(169,245,201,0.9)';
-        ctx.fillText(t.name || `Bàn ${t.label}`, t.x, t.y - t.r * 0.42);
+      // xem thử = đúng những gì khách/MC thấy: tên bàn phía trên vòng
+      // (mọi mức zoom) + số ghế trống to ở chính giữa
+      const nameText = t.name || `Bàn ${t.label}`;
+      let nameFont = t.r * 0.42;
+      ctx.font = `700 ${nameFont}px ${FONT}`;
+      const maxNameW = t.r * 2.4;
+      const nameW = ctx.measureText(nameText).width;
+      if (nameW > maxNameW) {
+        nameFont *= maxNameW / nameW;
+        ctx.font = `700 ${nameFont}px ${FONT}`;
       }
-      ctx.font = `800 ${t.r * (rpx < 44 ? 0.98 : 0.68)}px ${FONT}`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.lineJoin = 'round';
+      ctx.strokeStyle = 'rgba(2,5,12,0.62)';
+      ctx.lineWidth = nameFont * 0.18;
+      ctx.strokeText(nameText, t.x, t.y - t.r * 1.32);
+      ctx.fillStyle = 'rgba(169,245,201,0.9)';
+      ctx.fillText(nameText, t.x, t.y - t.r * 1.32);
+      ctx.font = `800 ${t.r * 0.98}px ${FONT}`;
       ctx.fillStyle = num;
-      ctx.fillText(String(t.total), t.x, t.y + (rpx >= 44 ? t.r * 0.12 : 0));
-      if (rpx >= 44) {
-        ctx.font = `600 ${t.r * 0.22}px ${FONT}`;
-        ctx.fillStyle = 'rgba(169,245,201,0.65)';
-        ctx.fillText(t.name
-          ? `Bàn ${t.label} · ${t.total === 0 ? 'ĐẦY' : t.total + ' chỗ'}`
-          : (t.total === 0 ? 'ĐẦY' : `trống / ${t.total}`), t.x, t.y + t.r * 0.55);
-      }
+      ctx.fillText(String(t.total), t.x, t.y);
     } else if (t.total < 8) {
       // bàn ít ghế (< 8): số chỗ ngồi là con số chính giữa vòng tròn để nhìn
       // là biết bàn này còn bao nhiêu chỗ để dắt khách tới
